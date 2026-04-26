@@ -255,3 +255,103 @@ Le point (0,0) est situé au centre de la fenêtre, le x étant positif vers la 
 # Tutoriel de prise en main du basecode
 
 Il est temps de plonger les mains dans le code !
+La partie précédente a permis de donner un contexte global au jeu en détaillant son architecture et le fonctionnement général des primitives.
+Le but de cette section est de détailler les grandes étapes de la construction du joueur et des ennemis.
+Après ce tutoriel, vous en aurez assez vu pour compléter le jeu selon vos désirs.
+
+Pour chaque partie, une ligne de commentaire du type `// [TODO XXX]` est ajoutée dans le code et correspond à des lignes à décommenter et/ou modifier.
+Identifez ces zones à l'aide d'un Ctrl+F (choisissez de rechercher dans la solution complète) et adapatez-les pour réaliser l'opration demandée.
+
+
+## Développement partie joueur
+
+Le joueur est défini au travers de la structure `Player` présente dans le fichier `player.h`.
+Comme tous les autres éléments du jeu, son premier membre est un `GameObject` auquel on ajoute des informations sur les différentes animations le composant, des états...
+Son développement passe par la création de l'objet et son affichage, son déplacement et la gestion de ses tirs.
+
+### [TODO Player render] - Affichage du joueur
+
+> [!NOTE]
+> Fichier à modifier : game/level/player.c
+
+Le player est formé de deux animations permanentes (le corps du vaisseau et les moteurs) et d'un bouclier qui s'affiche uniquement lorsque ce dernier est activé.
+Le chargement des animations a déjà été réalisé grâce aux fichiers `common/assets.c/.h`.
+Il ne reste donc plus qu'à récupérer les identifiants de chacune des animations, les mettre à jour et les afficher.
+Commençons par l'affichage.
+
+#### Fonction onRender() : envoi de la commande d'affichage
+
+L'affichage à l'écran est réalisé dans la fonction `PlayerVM_onRender()` qui enregistre les commandes de rendu auprès du `GraphicsSystem`.
+La commande désigne la texture à afficher ainsi que des informations de position, dimensions, ancrage, etc.
+Observez la création de la commande par la déclaration de la variable `GraphicsCmd cmd = { 0 };` et son initialisation.
+Le champ `transform` désigne la position de l'objet qui peut être récupérée avec `GameObject_getTransform()`. Cette position est actuellement dans le référentiel **monde**, mais elle sera automatiquement convertie en position en pixels lors du rendu avec le `GraphicsSystem`.
+N'hésitez pas à modifier plus haut la valeur de l'ancrage (variable `anchor`) pour définir la position du sprite par rapport à sa position réelle (au-dessus du corps physique, au centre...).
+
+> player.c -- onRender() : décommentez les lignes présentes pour récupérer la bonne animation et envoyer l'animation au `GraphicsSystem`.
+> Observez que l'on a besoin d'envoyer une commande par animation, mais que nous avons seulement utilisé la variable locale `cmd`.
+> Le pointeur vers la texture à afficher a été modifié à chaque fois pour envoyer correctement les trois animations composant le player.
+
+#### Fonction onUpdate() : mise à jour des animations
+
+Pour le moment, le sprite est bien trop gros et on ne voit aucune animation.
+Corrigeons déjà le fait que les animations soient fixes.
+Elles ont visiblement été correctement chargées en mémoire, mais une mise à jour est nécessaire à chaque frame pour indiquer quelle frame afficher au bon moment.
+C'est le `SpriteAnimManager` qui se charge de calculer tout ça pour nous !
+Il suffit de lui dire de se mettre à jour.
+
+> player.c -- onUpdate() : décommenter les lignes de la fonction afin de mettre à jour les trois animations.
+
+#### Fonction onCreate() : identifiant des animations
+
+Il y a du mouvement, mais la dimension est toujours incohérente et ce n'est pas le bon sprite affiché (le bouclier est affiché à la place du corps du vaisseau) !
+Ces éléments sont définis dans la fonction `create()`.
+Elle permet d'attribuer le bon identifiant pour chaque animation du vaisseau au travers des membres de type `SpriteAnimState` de la structure `Player`.
+Chacun d'entre eux contient, en plus de l'identifiant d'animation chargé dans les fichiers `common/assets.c/.h`, des informations qui permettent au `SpriteAnimManager` de savoir quelle frame afficher à l'instant t.
+
+> player.c -- create() : modifier l'identifiant de l'animation en corrigeant le dernier paramètre de l'appel à la fonction `SpriteAnimState_init()`.
+> N'hésitez pas à jeter un œil dans le fichier `common/assets.h` pour voir quels identifiants sont disponibles.
+> Nous verrons plus tard comment ils sont reliés à des sprites.
+
+#### Fonction onCreate() : dimensions
+
+Enfin, il ne reste plus que les dimensions du sprite à corriger, toujours dans la fonction `create()`.
+Le système de rendu nécessite de connaître la taille du sprite dans le monde du jeu.
+Actuellement, on constate que le calcul de la dimension est réalisé avec un appel à la fonction `RenderDim_setWorldDimensions()`, permettant d'attribuer des largeur et hauteur de 5 × 5 unités (sur un jeu de dimensions 16 × 9 unités), ce qui ne correspond pas à la taille réelle du sprite.
+Il faut utiliser `RenderDim_setPixelsPerUnit()` avec la constante `PIX_PER_UNIT` qui permet de convertir automatiquement les dimensions en pixels du sprite en unités du monde, garantissant ainsi un affichage proportionnel et cohérent. C'est particulièrement important pour les jeux en 2D de style Pixel Art.
+
+> player.c -- create() : remplacer le calcul des dimensions en utilisant la fonction commentée à la place de `RenderDim_setWorldDimensions()`.
+
+### [TODO Player movement] - Déplacement du joueur
+
+> [!NOTE]
+> Fichier à modifier : game/level/player.c
+
+Maintenant que le vaisseau s'affiche correctement, il est temps de le faire bouger en fonction des entrées du joueur !
+Le déplacement d'un objet dans le jeu se fait en deux temps : la mise à jour de la logique (position du player dans le monde) dans `onUpdate()` (appelée à chaque nouvelle frame) et l'application physique dans `onFixedUpdate()` (appelée exactement 100 fois par seconde).
+
+#### Fonction onUpdate() : lecture des entrées et mise à jour de la direction
+
+Dans la fonction `PlayerVM_onUpdate()`, nous allons lire les entrées du joueur pour mettre à jour les attributs `m_direction` et `m_speed` du `Player`.
+Pour accéder aux entrées utilisateur, nous devons d'abord récupérer le `GameContext`, le point d'accès central à tous les systèmes du jeu, grâce à la méthode `GameObject_getContext()`.
+Ce `GameContext` nous permet ensuite d'accéder aux entrées utilisateur via le pointeur `PlayerInput`.
+
+La structure `PlayerInput` (définie dans `game/input.h`) contient toutes les entrées d'un joueur :
+- `axis` (`Vec2`) : direction du joystick ou des touches directionnelles, normalisée entre -1 et 1 sur chaque axe. Un système de "deadzone" est appliqué pour éviter les petites valeurs parasites lorsque le joystick est au repos. La longueur du vecteur `axis` est limitée à 1 pour garantir une direction normalisée (même pour un déplacement diagonal).
+- `triggerL` (float) : valeur de la gâchette gauche entre 0 et 1, utilisée ici pour moduler la vitesse.
+- `shootDown`, `shootPressed`, etc. : booléens pour les différentes actions (tir, boost, pause...).
+
+> player.c -- onUpdate() : décommentez les deux lignes permettant de récupérer la direction (`playerInput->axis`) et de calculer la vitesse que l'on veut donner au joueur.
+
+Notez que la ligne `GameObject_updateTransform(self);` permet de synchroniser la position du joueur dans le monde à partir de la position du corps physique.
+Cette dernière doit encore être mise à jour dans la fonction `onFixedUpdate()`.
+
+#### Fonction onFixedUpdate() : application de la vélocité au corps physique
+
+Une fois la direction et la vitesse calculées dans `onUpdate()`, il faut les appliquer au corps physique (`Body`) du joueur dans `onFixedUpdate()`.
+Chaque `GameObject` possède un `Body` qui gère sa position, sa vélocité et ses collisions dans le moteur physique.
+La vélocité (vitesse vectorielle) du `Body` détermine son déplacement à chaque pas de temps physique.
+
+> player.c -- onFixedUpdate() : décommentez la ligne qui applique la vélocité au `body`.
+> Observez que l'on calcule la vélocité en multipliant (`Vec2_scale`) le vecteur direction normalisé par la vitesse scalaire.
+
+Compilez et testez : le vaisseau devrait maintenant répondre aux touches directionnelles et à la manette !
