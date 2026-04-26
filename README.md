@@ -6,8 +6,7 @@ Space Pixels is a 2D Shoot'Em Up game developed in C.
 
 The code available in this repository corresponds to a project template / basecode provided to students of ESIEA as a final semester project.
 As such, the game is not feature-complete: it is intended to be extended, improved, and completed by students.
-
-This repository also provides a reusable game engine (`engine/`) and a sample application (`application/`) demonstrating UI, sprite sheets, input handling, scenes, and resource management.
+A [quick start guide](docs/quick_start_fr.md) (in French) is provided in the `docs/` folder to help students get started with the codebase.
 
 ## Demo
 
@@ -27,6 +26,8 @@ The demo executable is currently compiled for Windows in 64 bits.
   - Source assets are placed in `assets_dev/`.
   - The build system can automatically generate obfuscated copies.
   - Obfuscated assets are written to `assets/` and can be loaded normally via the `AssetManager`.
+
+This repository provides a reusable game engine (`engine/`) and a sample application (`application/`) demonstrating UI, sprite sheets, input handling, scenes, and resource management.
 
 ## Recommended Build Setup
 
@@ -69,7 +70,7 @@ See the `LICENSE.md` file for details.
 Game assets included in this repository are not covered by the MIT license.
 They are provided under various third-party licenses.
 
-Detailed information is available in `ASSETS_LICENSES.md`.
+Detailed information is available in [ASSETS_LICENSES.md](ASSETS_LICENSES.md) file.
 
 ## Educational context
 
