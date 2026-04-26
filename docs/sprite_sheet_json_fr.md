@@ -584,4 +584,3 @@ Pour vérifier que votre fichier JSON est correct :
 - **Parser** : `engine/src/core/sprite_sheet.c`
 - **Structures** : `engine/include/core/sprite_sheet.h`
 - **Exemples** : `assets_dev/atlas/*_desc.json`
-- 
