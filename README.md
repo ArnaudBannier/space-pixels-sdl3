@@ -20,7 +20,7 @@ The demo executable is currently compiled for Windows in 64 bits.
 
 - Minimal 2D engine in C using SDL3, SDL3_image, SDL3_ttf, SDL3_mixer and cJSON.
 - UI system with buttons, lists, labels, layouts and anchor-based positioning.
-- Sprite sheet support, including 9-slice scaling and pixel-art rendering.
+- Sprite sheet support, including 9-slice scaling and pixel-art rendering (see the [documentation](docs/sprite_sheet_json_fr.md) for details).
 - Clean project layout suitable as a template for new SDL3 projects.
 - Built-in asset obfuscation system:
   - Source assets are placed in `assets_dev/`.
