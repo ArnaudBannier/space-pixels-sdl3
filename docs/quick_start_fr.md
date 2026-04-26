@@ -355,3 +355,518 @@ La vélocité (vitesse vectorielle) du `Body` détermine son déplacement à cha
 > Observez que l'on calcule la vélocité en multipliant (`Vec2_scale`) le vecteur direction normalisé par la vitesse scalaire.
 
 Compilez et testez : le vaisseau devrait maintenant répondre aux touches directionnelles et à la manette !
+
+### [TODO Player shoot] - Tirs du joueur
+
+> [!NOTE]
+> Fichiers à modifier : game/level/player.h et game/level/player.c
+
+Maintenant que le vaisseau se déplace, donnons-lui la capacité de tirer des projectiles.
+Nous allons implémenter deux versions du système de tir : une version simple (V1) avec tir à chaque action du joueur, puis une version avancée (V2) avec cadence de tir automatique et limitée pour un meilleur équilibre du gameplay.
+
+Le jeu utilise la structure `LinearBullet` pour représenter les projectiles qui se déplacent en ligne droite.
+Lors de la création d'un projectile avec `LinearBullet_create()`, on spécifie entre autre le type de projectile (ici `LINEAR_BULLET_TYPE_PLAYER_DEFAULT`), sa position, vitesse et orientation initiale ainsi que l' identifiant du joueur qui tire (pour attribuer les points lors d'une destruction d'ennemi).
+
+La fonction `Player_updateBullet()` est appelée à chaque frame depuis `PlayerVM_onUpdate()` pour vérifier si le joueur souhaite tirer et créer les projectiles en conséquence.
+C'est donc dans cette fonction que nous ferons les modifications. Nous vous conseillons d'implémenter une sous-fonction `Player_updateXXX()` pour chaque type de bonus que vous souhaitez implémenter (space gun, auto-canons, rockets...) afin de garder une bonne organisation du code.
+Cela permettra également de ne pas surcharger la fonction `Player_update()` qui deviendra rapidement illisible si elle gère tous les types de tir.
+
+#### Version 1 : Tir simple
+
+La première version implémente un système de tir basique : dès que le joueur appuie sur le bouton de tir, un projectile est créé.
+Cela produit un tir unique et ne limite pas la cadence de tir.
+
+> player.c -- Player_updateBullet()
+>
+> Décommentez le bloc de code V1 pour implémenter le tir simple.
+> Observez que le test `if (playerInput->shootPressed)` vérifie si le joueur vient d'appuyer sur le bouton de tir lors de cette frame.
+> On emet donc un tir à chaque fois que la touche de tir passe de l'état haut à bas.
+> Comparez le résultat avec l'usage de shootDown.
+
+#### Version 2  : Cadence de tir limitée avec accumulateur
+
+La version plus adaptée introduit un système de cadence de tir qui limite le nombre de projectiles à 5 tirs par seconde maximum.
+Pour cela, nous allons utiliser un accumulateur temporel (`m_accuBullet`) qui se décharge au fil du temps.
+
+> player.h -- Structure Player
+>
+> Décommentez la ligne `float m_accuBullet;` pour ajouter l'attribut au joueur.
+
+Cet accumulateur représente le temps restant avant de pouvoir tirer à nouveau.
+Il est décrémenté dans la fonction `Player_updateBullet()` du temps qui s'est écoulé depuis la dernière frame (`dt`).
+Lorsqu'il est négatif ou nul et que la touche de tir est enfoncée, le joueur peut tirer.
+Après chaque tir, il est réinitialisé à `PLAYER_BULLET_TIME` (définition dans `common/common.h`).
+
+> player.c -- Player_updateBullet()
+>
+> Commentez le bloc V1, puis décommentez le bloc V2 pour implémenter la cadence de tir.
+
+Compilez et testez : le joueur tire désormais à une cadence contrôlée, même si le bouton reste enfoncé.
+Un effet sonore (`AUDIO_SFX_PLAYER_BASIC`) accompagne chaque tir pour un meilleur retour audio.
+
+## Développement des ennemis
+
+Tous les ennemis du jeu partagent une structure de données commune appelée **`EnemyData`** (définie dans `enemy_data.h`), qui centralise les attributs et comportements de base communs à tous les types d'ennemis.
+Cette structure contient l'état de l'ennemi, ses points de vie, les points attribués au joueur lors de sa destruction, un indicateur de bouclier, ainsi que les identifiants de ses animations.
+Elle gère également le type d'objet bonus que l'ennemi peut faire apparaître à sa mort.
+
+Le fichier `enemy_data.c` fournit un ensemble de fonctions utiles pour tous les ennemis :
+* `Enemy_init()` pour l'initialisation (enregistrement dans le niveau, configuration du corps physique avec les masques de collision), 
+* `Enemy_onUpdate()` pour la gestion des animations et des changements d'état, 
+* `Enemy_onFixedUpdate()` pour la mise à jour de la position physique, 
+* `Enemy_onTakeDamage()` pour gérer les dégâts subis et la mort, 
+* `Enemy_onRender()` pour l'affichage, 
+* `Enemy_onDrawGizmos()` pour le débogage visuel,
+* `Enemy_onDestroy()` pour les libérations de mémoire.
+
+Chaque type d'ennemi concret (comme `Fighter` ) hérite ainsi de `GameObject` et de ses méthodes virtuelles et contient une structure `EnemyData` pour bénéficier de ces fonctionnalités partagées.
+Les méthodes virtuelles de l'ennemi appellent ensuite les fonctions `Enemy_*()` correspondantes en leur passant leur structure `EnemyData`.
+
+### [TODO enemy] - Base d'un ennemi
+
+> [!NOTE]
+> Fichier à modifier : game/level/enemy_data.c
+
+Avant de créer un ennemi concret comme le `Fighter`, nous devons d'abord implémenter les fonctionnalités de base partagées par tous les ennemis.
+La fonction `Enemy_onUpdate()` gère la logique d'animation de tous les ennemis.
+Elle contient déjà un système de changement d'animation basé sur l'état de l'ennemi (`ENEMY_STATE_FIRING` ou `ENEMY_STATE_DYING`), mais l'animation principale (`data->m_mainAnim`) n'est pas encore mise à jour à chaque frame.
+Sans cette mise à jour, l'animation restera figée sur sa première image.
+
+> enemy_data.c -- Enemy_onUpdate()
+>
+> Décommentez la ligne qui met à jour l'animation principale.
+
+La fonction `Enemy_onRender()` enregistre les commandes de rendu pour afficher l'ennemi à l'écran, exactement comme nous l'avons fait pour le joueur.
+Le principe est identique : on crée une commande `GraphicsCmd`, on la configure avec la position, l'ancrage, la texture et les dimensions, puis on l'envoie au `GraphicsSystem`.
+
+> enemy_data.c -- Enemy_onRender()
+>
+> Décommentez le bloc de code complet pour envoyer la commande de rendu.
+
+Observez que la commande utilise `GAME_LAYER_ENEMY` comme calque de tri pour garantir que les ennemis s'affichent au bon niveau par rapport aux autres éléments du jeu.
+Ces deux modifications suffisent à rendre fonctionnel le système d'affichage et d'animation de base pour tous les ennemis.
+Cependant, aucun ennemi ne s'affiche pour le moment. En effet, un ennemi est un simple `GameObject` avec un composant `EnemyData`. Pour obtenir les fonctionnalités développées dans `enemy_data.c`, il faut appeler les fonctions explicitement dans les méthodes de chaque ennemi. Il s'agit ici d'une composition et non d'un héritage.
+Nous verrons dans la section suivante comment créer un ennemi concret (le Fighter) qui utilisera ces fonctionnalités.
+
+### [TODO fighter] - Création d'un ennemi type fighter
+
+> [!NOTE]
+> Fichiers à modifier : common/assets.h, common/assets.c, game/level/fighter.c
+
+Maintenant que les fonctionnalités de base des ennemis sont codées (`Enemy_onUpdate()` et `Enemy_onRender()`), nous allons créer notre premier ennemi concret : le `Fighter`.
+Le Fighter est un petit vaisseau ennemi qui tire des projectiles horizontaux en direction du joueur.
+Sa création nécessite trois étapes : le chargement des ressources graphiques (sprites et animations), la configuration de ses données (animations, points de vie, points), et l'activation de son affichage.
+
+#### Étape 1 : Chargement des ressources du Fighter
+
+Avant de pouvoir afficher le `Fighter`, il faut d'abord charger ses sprites et définir ses animations.
+Le système de gestion des assets nécessite d'abord de déclarer des identifiants dans des énumérations, puis de les enregistrer auprès de l'`AssetManager` et du `SpriteAnimManager`.
+
+Le fichier `assets.h` contient deux énumérations importantes : `GameSpriteId` (identifiants des atlas de sprites) et `GameAnimId` (identifiants des animations).
+Les entrées correspondant au `Fighter` sont déjà présentes mais commentées.
+
+> assets.h -- enum GameSpriteId
+>
+> Décommentez la ligne `SPRITE_FIGHTER`.
+
+> assets.h -- enum GameAnimId
+>
+> Décommentez les quatre lignes d'animations du Fighter.
+
+Le fichier `assets.c` contient la fonction `Game_addAssets()` qui enregistre toutes les ressources au démarrage du jeu.
+Elle utilise le tableau `sheetsToLoad[]` pour associer chaque `GameSpriteId` à un atlas de textures et une description JSON, et le tableau `animsToLoad[]` pour associer chaque `GameAnimId` à ses paramètres d'animation.
+
+> assets.c -- sheetsToLoad[]
+>
+> Décommentez la ligne du `Fighter` afin de charger le fichier `atlas/fighter.png` (texture) et `atlas/fighter_desc.json` (description du découpage en sprites) et de les associer à l'identifiant `SPRITE_FIGHTER`.
+
+> assets.c -- animsToLoad[]
+>
+> Décommentez les quatre lignes des animations du Fighter afin d'associer leur identifiant à leurs paramètres.
+> Notez que l'animation de mort (`ANIM_FIGHTER_DYING`) a un `loopCount` de `1` au lieu de `-1`, car elle ne doit se jouer qu'une seule fois avant la destruction de l'ennemi.
+
+#### Étape 2 : Configuration des animations dans Fighter_create()
+
+La fonction `Fighter_create()` initialise un nouvel ennemi Fighter en configurant sa structure `EnemyData`.
+Comme pour le player, elle permet entre autres d'attribuer le bon identifiant d'animation à chaque membre de type `AnimId`.
+
+> fighter.c -- Fighter_create()
+>
+> Remplacez les quatre identifiants d'animations qui utilisent actuellement ceux du player.
+
+Observez également que les attributs `hp` (points de vie) et `points` (points attribués au joueur lors de la destruction) sont déjà configurés respectivement à `10.f` et `3.f`.
+Ces valeurs définissent la résistance de l'ennemi et la récompense pour le joueur.
+
+#### Étape 3 : Activation de l'affichage dans FighterVM_onRender()
+
+La fonction `FighterVM_onRender()` est la méthode virtuelle appelée à chaque frame pour afficher le `Fighter`.
+Elle doit déléguer le rendu à la fonction `Enemy_onRender()` que nous avons implémentée dans la section précédente.
+Cette fonction générique gère l'affichage de tous les ennemis en utilisant les données de leur structure `EnemyData`.
+
+> fighter.c -- FighterVM_onRender()
+>
+> Décommentez la ligne `Enemy_onRender(self, &self->m_enemyData);`.
+
+
+#### Test et observation
+
+Compilez et lancez le jeu.
+Vous devriez maintenant voir apparaître des ennemis `Fighter` dans le niveau, avec leurs animations qui se jouent correctement.
+Pour le moment, ils ne tirent pas encore et ne réagissent pas aux collisions, mais leur affichage et leurs animations fonctionnent.
+
+### [TODO enemy gizmos] - Visualisation du collider de l'ennemi
+
+> [!NOTE]
+> Fichiers à modifier : game/level/enemy_data.c, game/level/fighter.c
+
+Les **gizmos** sont des outils de visualisation utilisés en mode debug pour afficher des informations visuelles qui ne sont pas présentes dans le jeu final.
+Ils permettent notamment de visualiser les **colliders** (zones de collision) des objets pour vérifier qu'ils correspondent bien aux sprites affichés.
+
+Le système de gizmos pour les objets du jeu s'active avec la touche **F2**.
+Lorsqu'un mode gizmo est actif, chaque objet possédant une méthode `onDrawGizmos()` peut enregistrer des commandes de dessin auprès du `GizmosSystem`.
+Ces commandes permettent de dessiner des formes géométriques simples (cercles ou rectangles) par-dessus le rendu normal du jeu.
+
+Puisque les ennemis partagent un composant `EnemyData`, c'est dans cette dernière que l'on retrouve la commande au moteur de rendu des gizmos.
+
+> enemy_data.c -- Enemy_onDrawGizmos()
+>
+> Décommentez le bloc complet de création et d'envoi de la commande gizmos.
+
+Cette fonction ne sera exécutée que lorsque le mode gizmos est actif (touche F2) et que le fighter aura appelé cette méthode.
+
+> fighter.c -- FighterVM_onDrawGizmos()
+>
+> Décommentez l'appel à la fonction générique de dessin du gizmo.
+
+Compilez et lancez le jeu, puis appuyez sur **F2** pour activer les gizmos des objets du jeu.
+Vous devriez voir apparaître un **grand** cercle rose autour du `Fighter` désignant la zone de collision.
+Le rayon est actuellement fixé à `2.0f` unités dans la fonction `Fighter_create()`, ce qui correspond à un diamètre de 4 unités (presque la moitié de la hauteur de l'écran !).
+Il est essentiel que ce rayon soit ajusté **au plus près du sprite** pour obtenir des collisions précises et satisfaisantes pour le joueur.
+
+> fighter.c -- Fighter_create()
+>
+> Modifiez le rayon du collider pour l'ajuster au mieux au sprite du fighter.
+
+### [TODO fighter shoot] - Tir de l'ennemi
+
+> [!NOTE]
+> Fichier à modifier : game/level/fighter.c
+
+Maintenant que le `Fighter` s'affiche correctement et que son collider est bien ajusté, il est temps de le rendre dangereux en lui donnant la capacité de tirer !
+Contrairement au joueur qui tire en fonction d'une cadence temporelle (accumulateur `m_accuBullet`), les ennemis utilisent un système de tir basé sur les événements d'animation.
+Cette approche permet de synchroniser parfaitement les tirs avec l'animation visuelle du vaisseau : les projectiles sont lancés précisément lorsque l'animation montre les canons en action.
+C'est aussi la démarche qu'il faudra utiliser pour les canons automatiques du joueur (item auto-canon) afin de faire partir les projectiles au bon moment.
+
+#### Le système d'événements d'animation
+
+Le moteur d'animation du jeu génère automatiquement des **événements** (`SpriteAnimEvent`) à chaque changement de frame d'une animation.
+Ces événements sont stockés dans la structure `SpriteAnimState` et peuvent être consultés à chaque frame dans la méthode `onUpdate()`.
+Chaque événement contient un type (`ANIM_EVENT_FRAME_CHANGED` pour les changements de frame) et un index (le numéro de la frame qui vient d'être affichée).
+Pour le Fighter, nous allons détecter les frames 1 et 3 de l'animation de tir (`ANIM_FIGHTER_FIRING`) pour créer des projectiles aux positions de ses deux canons.
+Consulter le fichier `atlas/fighter_desc.json` vous permettra de voir la disposition des frames d'animation et de repérer les frames 1 et 3 qui montrent les canons en action.
+
+La fonction `FighterVM_onUpdate()` contient déjà la structure de base pour écouter les événements d'animation.
+Après avoir appelé `Enemy_onUpdate()` qui met à jour l'animation principale, la fonction vérifie que l'ennemi est bien en état de tir (`ENEMY_STATE_FIRING`), puis boucle sur tous les événements générés par l'animation courante.
+
+Ce pattern de boucle filtre les événements pour ne traiter que les changements de frame (`ANIM_EVENT_FRAME_CHANGED`), puis utilise `event->index` pour identifier la frame concernée.
+
+> fighter.c -- FighterVM_onUpdate()
+>
+> Décommentez le bloc complet du tir à la frame 1.
+> Le vaisseau ennemi tire maintenant un projectile de son canon droit lorsque l'animation passe sur la frame 1.
+
+Notons que le calcul de la position initiale du projectile est déterminé à partir de la position du fighter (`transform->position`).
+On y ajoute un décalage en pixels converti en unités du monde avec `PIX_TO_WORLD`.
+Le décalage `(-6.f, +6.f)` place le projectile légèrement à gauche et en haut par rapport au centre du vaisseau, correspondant à la position visuelle du canon gauche sur le sprite.
+
+Le Fighter possède deux canons et l'animation de tir montre les deux en action, le premier sur la frame 1, le second sur la frame 3.
+Pour un comportement cohérent, nous devons faire tirer le second canon à la frame 3 de l'animation.
+De plus, il sera nécessaire de faire partir le projectile de la bonne position.
+Attention, le sprite du fighter est pivoté de 90 degrés dans le sens trigonométrique par rapport à sa disposition originale dans l'atlas.
+Prenez cette rotation en compte pour décaler votre position initiale de second projectile.
+
+> fighter.c -- FighterVM_onUpdate()
+>
+> Dupliquez le bloc de code du tir à la frame 1 et modifiez-le pour tirer à la frame 3, en adaptant sa position de départ.
+
+Utilisez la touche **F2** pendant le jeu pour activer les gizmos et observer la position exacte de création des projectiles.
+Vous pouvez également appuyer sur la touche **F1** pour activer le mode pas à pas et **Tab** pour avancer d'un pas.
+
+Pour le moment, ces projectiles ne causent pas encore de dégâts au joueur (la détection de collision sera implémentée dans la section suivante), mais le comportement visuel et audio du tir ennemi est fonctionnel.
+
+### [TODO collisions] - Collisions et système de dégâts
+
+> [!NOTE]
+> Fichiers à modifier : game/level/linear_bullet.c, game/level/enemy_data.c
+
+Maintenant que les projectiles sont créés et se déplacent correctement, il est temps de les rendre fonctionnels en activant le système de collision et de dégâts.
+Pour le moment, les projectiles traversent les joueurs et les ennemis sans effet.
+
+Le système de collision du moteur physique repose sur un système de **catégories** et de **masques** de bits :
+- **`categoryBits`** : définit à quelle(s) catégorie(s) appartient un objet (ex : `GAME_CATEGORY_ENEMY`)
+- **`maskBits`** : définit avec quelle(s) catégorie(s) l'objet peut entrer en collision (ex : `GAME_CATEGORY_PLAYER_BULLET`)
+
+Deux objets entrent en collision si et seulement si :
+- les `categoryBits` du premier objet intersectent les `maskBits` du second
+- **ET** les `categoryBits` du second objet intersectent les `maskBits` du premier
+
+Puisque les projectiles du joueur et des ennemis sont pour le moment tous des `LinearBullet`, c'est dans cette classe que sont initialisés les masques et catégories par défaut pour chaque type de projectile.
+Une fois les masques et catégories des projectiles définis, il faudra récupérer les informations de collision lorsque ces dernières seront détectées.
+Finalement viendra l'attribution de dégâts à l'objet touché et l'attribution de points au player dans le cas d'un ennemi détruit.
+
+#### Étape 1 : Activation de la détection de collision dans LinearBulletVM_onFixedUpdate()
+
+Une fois les masques correctement configurés, le moteur physique détecte automatiquement les collisions et les stocke dans le tableau `body->collisions`.
+Il ne reste plus qu'à lire ce tableau et à appliquer les dégâts aux objets touchés.
+Lorsqu'un corps `bodyA` entre en collision avec un corps `bodyB`, une entrée est ajoutée dans le tableau de collisions de `bodyA` ainsi que dans celui de `bodyB`.
+Soyez donc attentif à ne pas appliquer les dégâts deux fois en traitant à la fois les collisions de `bodyA` et de `bodyB` pour un même contact. Le choix a été fait de ne traiter que les collisions uniquement dans la classe `LinearBullet` pour éviter ce problème. Cela évite également de devoir implémenter la logique de dégâts dans les classes `Player` et `Enemy` qui n'ont pas besoin de connaître les spécificités des projectiles.
+
+> linear_bullet.c -- LinearBulletVM_onFixedUpdate()
+>
+> Décommentez le bloc complet de vérification des collisions (boucle `for` sur `body->collisionCount`).
+
+Ce code parcourt toutes les collisions détectées lors du dernier pas de physique.
+Pour chaque collision, il :
+1. Récupère le `Body` de l'objet touché via `PhysicsEngine_getBody()`
+2. Récupère le `GameObject` associé via `body->userData`
+3. Applique les dégâts à l'objet via `GameObject_takeDamage()` en passant les dégâts (`self->m_damage`) et l'identifiant du joueur qui a tiré (`self->m_playerId`)
+4. Détruit le projectile avec `GameObject_setToDestroy()`
+5. Émet des particules visuelles avec `LinearBullet_emitParticles()`
+
+La méthode `GameObject_setToDestroy()` marque l'objet pour destruction, qui sera effective à la fin de la frame en cours. Il n'est donc pas problématique de l'appeler au sein de la boucle de collision, même si le projectile entre en collision avec plusieurs objets en même temps.
+
+Compilez et lancez le jeu.
+Les projectiles du joueur devraient maintenant toucher les ennemis avec des particules visibles, mais sans effet sur leurs points de vie.
+En revanche, les projectiles du fighter ne touchent pas encore le joueur.
+
+#### Étape 2 : Configuration des masques pour les projectiles ennemis
+
+Actuellement, les projectiles de type `LINEAR_BULLET_TYPE_FIGHTER` ont leurs masques désactivés dans la méthode `LinearBullet_create()`, ce qui les empêche de détecter toute collision.
+Nous devons leur attribuer les bonnes valeurs pour qu'ils puissent toucher le joueur.
+
+> linear_bullet.c -- LinearBullet_create()
+>
+> Dans le `switch` case `LINEAR_BULLET_TYPE_FIGHTER`, remplacez les lignes d'initialisation du masque et de catégorie par les valeurs appropriées.
+> Inspirez-vous des lignes juste au dessus définissant ceux des projectiles du player.
+> Les constantes de catégorie sont définies dans `common/common.h`.
+
+Suivant les valeurs que vous avez attribuées aux masques et catégories des projectiles du fighter, il est possible que le fighter se touche lui-même avec ses propres tirs et ne semble donc pas tirer du tout.
+N'hésitez pas à consulter les masques et catégories de tous les objets du jeu (player, ennemis, projectiles) pour vérifier que les collisions sont configurées correctement.
+
+#### Étape 3 : Gestion des dégâts dans onTakeDamage()
+
+Maintenant que les collisions sont correctement détectées, il faut retirer des points de vie à l'objet touché et le changer d'état lorsque les points de vie sont à zéro.
+Implémentons cette logique de dégâts dans la fonction `Enemy_onTakeDamage()`.
+Cette fonction est appelée automatiquement lorsqu'un projectile touche un ennemi (via `GameObject_takeDamage()`).
+
+> enemy_data.c -- Enemy_onTakeDamage()
+>
+> Décommentez la ligne `data->hp -= damage;` pour diminuer les points de vie de l'ennemi.
+
+Lorsque les points de vie atteignent zéro, l'ennemi doit passer en état `ENEMY_STATE_DYING` pour déclencher son animation de mort.
+Il faut finalement attribuer des points au joueur qui vient de tuer l'ennemi.
+
+> enemy_data.c -- Enemy_onTakeDamage()
+>
+> Dans le bloc `if (data->hp <= 0.f)`, décommentez la ligne `data->state = ENEMY_STATE_DYING;`.
+> Décommentez également la ligne qui augmente le score du joueur.
+
+
+#### Étape 4 : Destruction à la fin de l'animation et attribution des points
+
+Après plusieurs tirs reçus, l'ennemi émet un item et arrête de tirer.
+Cela correspond à la condition implémentée précédemment sur son changement d'état.
+Cependant, les ennemis ne sont jamais détruits et restent figés à l'écran.
+
+Nous devons donc lancer une animation de mort lors du changement d'état puis détruire l'objet à la fin de l'animation.
+Le système d'événements d'animation génère un événement `ANIM_EVENT_ANIMATION_END` lorsqu'une animation se termine. Attention, cet événement n'est jamais généré pour les animations en boucle infinie (`loopCount` = -1). Vous pouvez utiliser l'événement `ANIM_EVENT_CYCLE_END` pour ce type d'animation, qui est généré à chaque fois que l'animation boucle.
+
+> enemy_data.c -- Enemy_onUpdate()
+>
+> Décommentez le bloc `case ENEMY_STATE_DYING` qui change l'animation pour `data->dyingAnimId`.
+> Cette animation est lancée au moment du passage à l'état dying.
+> L'affectation de l'id permet de ne pas rentrer à nouveau dans ce case lors de la prochaine frame.
+>
+> Décommentez également le bloc complet de détection de fin d'animation afin de détruire l'ennemi lorsque son animation de mort est terminée (boucle `for` sur `mainAnim->eventCount`).
+
+Félicitations ! Vous avez implémenté le cœur du gameplay de Space Pixels.
+La boucle de jeu est maintenant fonctionnelle : tirer, toucher, détruire, marquer des points.
+Il reste à finaliser la transition depuis la fin du niveau et à créer autant d'ennemis et de vagues que souhaité.
+
+### [TODO level] - Niveaux et vagues d'ennemis
+
+> [!NOTE]
+> Fichiers à modifier : game/scene/level/level_01.c, game/scene/level_scene.c
+
+Le système de niveau repose sur un mécanisme de vagues scriptées : chaque niveau est défini dans son propre fichier au travers d'une fonction `LevelScene_updateLevelX()` qui contient un `switch/case` où chaque `case` représente une vague d'ennemis à faire apparaître.
+Le jeu appelle cette fonction à chaque fois que tous les ennemis de la vague précédente sont éliminés (détection via `g_gameConfig.level.enemyCount` qui est incrémenté dans `Enemy_init()` et décrémenté dans `Enemy_onDestroy()`).
+Lorsque toutes les vagues sont complétées, la fonction `LevelScene_onLevelCompleted()` est appelée pour ouvrir l'écran de fin de niveau.
+Si tous les joueurs sont éliminés, `LevelScene_onLevelFailed()` déclenche l'écran de game over.
+
+#### Ajout d'une nouvelle vague d'ennemis sur le niveau 1
+
+Le fichier `game/scene/level/level_01.c` contient la définition du premier niveau.
+Le système de vagues fonctionne ainsi :
+1. Au début du niveau, `level->waveIdx` est initialisé à 0
+2. `LevelScene_updateGame()` appelle `LevelScene_updateLevel1()` lorsque `level->enemyCount` atteint zéro (tous les ennemis de la vague précédente sont détruits)
+3. La fonction lit `level->waveIdx` pour savoir quelle vague spawner, crée les ennemis, puis incrémente `level->waveIdx`
+4. Le `default:` du switch est atteint lorsque toutes les vagues sont terminées, déclenchant `LevelScene_onLevelCompleted()`
+
+Notez que chaque appel à `Fighter_create()` incrémente automatiquement `level->enemyCount` dans `Enemy_init()`, et chaque destruction d'ennemi le décrémente dans `Enemy_onDestroy()`.
+Ce compteur permet au système de savoir quand une vague est terminée sans avoir à parcourir manuellement tous les objets du jeu.
+
+> level_01.c -- LevelScene_updateLevel1()
+>
+> Décommentez le bloc `case 2:` complet (4 lignes) pour activer une troisième vague.
+> N'hésitez pas à modifier les positions pour tester d'autres placements.
+
+Vous avez peut-être remarqué que le lancement du niveau 2 se soldait par une erreur.
+C'est normal, puisqu'il n'existe aucun appel à la mise à jour de ce niveau.
+
+> level_scene.c -- LevelScene_updateGame()
+>
+> Décommentez l'appel à la fonction `LevelScene_updateLevel2()` pour activer la mise à jour du niveau.
+
+#### Étape 2 : Activation de la transition de victoire ou de défaite
+
+Actuellement, lorsque toutes les vagues sont terminées, la fonction `LevelScene_onLevelCompleted()` est bien appelée, mais elle ne fait rien de visible : le joueur reste bloqué sur un écran vide sans indication de victoire.
+Nous devons ouvrir la page de fin de niveau et **geler le temps** pour permettre au joueur de contempler son score sans que le jeu continue à tourner en arrière-plan.
+L'**échelle de temps** (_time scale_) est un multiplicateur appliqué au temps écoulé (`dt`) transmis à toutes les fonctions `onUpdate()`.
+Avec une échelle de 0, `dt` devient 0 et plus aucun objet ne bouge ni ne s'anime, créant un effet de pause visuel parfait pour contempler la victoire.
+
+> level_scene.c -- LevelScene_onLevelCompleted()
+>
+> Décommentez les deux lignes dans le bloc [TODO level] pour ouvrir la page de fin et geler le temps.
+
+> level_scene.c -- LevelScene_onLevelFailed()
+>
+> Décommentez les deux mêmes lignes dans le bloc [TODO level].
+
+La gestion des pages est déléguée à la partie UI.
+Vous pourrez retrouver le contenu de la page de victoire dans le fichier `game/ui/level_end_page.c`.
+Nous étudierons la gestion de l'UI dans un autre document.
+
+
+
+### [TODO new enemy] - Création d'un nouvel ennemi : la Frigate
+
+> [!NOTE]
+> Fichiers à créer : game/level/frigate.c, game/level/frigate.h
+> Fichiers à modifier : common/assets.h, common/assets.c, game/scene/level/level_01.c
+
+Vous avez maintenant tous les outils pour créer vos propres ennemis !
+Pour vous aider à démarrer, le basecode fournit deux fichiers **template** (`template_enemy.c/.h`) qui contiennent la structure de base d'un ennemi prêt à être dupliqué et adapté.
+Dans cette section, vous allez créer un nouvel ennemi appelé **Frigate**, un vaisseau plus imposant que le Fighter, avec un comportement plus complexe basé sur des **phases alternées** : une phase de tir intensif (3 salves de projectiles) suivie d'une phase défensive où le vaisseau active son bouclier pour se protéger.
+
+#### Étape 1 : Duplication des fichiers template
+
+La première étape consiste à créer les fichiers de la Frigate à partir des templates fournis.
+Via l'explorateur de solution, créez deux nouveaux fichiers `frigate.c` et `frigate.h` en faisant un clic droit sur le dossier `level`.
+Vérifiez que les nouveaux fichiers sont bien créés dans le dossier `game/level/` et non à la racine du projet. Vérifiez également que ces fichiers sont bien ajoutés au `CMakeLists.txt` du dossier `application/` pour être compilés.
+Copiez ensuite le contenu des templates dans ces fichiers nouvellement créés.
+
+Dans chaque fichier, vous devez maintenant remplacer toutes les occurrences de `TemplateEnemy` par `Frigate`.
+Utilisez la fonction **Ctrl+H** (Rechercher/Remplacer) de votre éditeur pour effectuer ce remplacement automatiquement dans les deux fichiers.
+- Cochez l'option "Respecter la casse" pour ne remplacer que les occurrences exactes de `TemplateEnemy` et pas d'autres mots qui pourraient contenir cette séquence de caractères.
+- Ne cochez pas l'option "Mot entier" car les occurrences à remplacer ne sont pas des mots entiers (ex : `TemplateEnemyVM_onUpdate` doit devenir `FrigateVM_onUpdate`).
+- Remplacez les occurrences fichier par fichier en sélectionnant "Document en cours" et non "Solution complète" pour éviter de remplacer des occurrences dans d'autres fichiers.
+- Pensez à remplacer les chemins des includes !
+
+> [!WARNING]
+> **Attention** : Les fonctions **doivent rester `static`** dans le fichier `.c` (sauf `Frigate_create` qui est public).
+> Ne supprimez pas le mot-clé `static` devant les méthodes virtuelles (`FrigateVM_onUpdate`, `FrigateVM_onRender`, etc.).
+> Cela permet de limiter leur visibilité au seul fichier `frigate.c`.
+
+#### Étape 2 : Chargement des ressources de la Frigate
+
+Comme pour le Fighter, vous devez enregistrer les sprites et animations de la Frigate dans le système d'assets.
+
+> assets.h
+>
+> Décommentez la ligne `SPRITE_FRIGATE` dans l'énumération `GameSpriteId`.
+> Décommentez les quatre lignes d'animations de la Frigate dans l'énumération `GameAnimId`.
+
+> assets.c
+>
+> Décommentez la ligne de la Frigate dans le tableau `sheetsToLoad[]`.
+> Décommentez les quatre lignes d'animations de la Frigate dans le tableau `animsToLoad[]`.
+
+Observez que l'animation `ANIM_FRIGATE_FIRING` a un paramètre `loopCount` de `3` au lieu de `-1`.
+Cela signifie qu'elle se jouera **exactement 3 fois** avant de se terminer, générant un événement `ANIM_EVENT_ANIMATION_END` que vous pourrez détecter pour changer de phase.
+
+#### Étape 3 : Configuration de la Frigate dans frigate.c
+
+Maintenant que les ressources sont chargées, configurez les propriétés de la Frigate dans la fonction `Frigate_create()`.
+
+> frigate.c -- Frigate_create()
+>
+> Dans le bloc d'initialisation de `EnemyData`, remplacez les identifiants d'animations par ceux de la Frigate.
+> Modifiez également les points de vie et les points attribués pour refléter la puissance de la Frigate.
+> Ajustez le rayon du collider (inspirez-vous de ce que vous avez fait pour le Fighter)
+
+#### Étape 4 : Implémentation du système de phases
+
+La Frigate alterne entre deux phases :
+- **Phase de TIR** : L'animation `ANIM_FRIGATE_FIRING` se joue 3 fois (rotation du vaisseau), et à chaque frame 1 et 3, la Frigate tire des projectiles (comme le Fighter)
+- **Phase de DÉFENSE** : Après les 3 cycles de tir, la Frigate passe en animation `ANIM_FRIGATE_IDLE` et active son bouclier (`ANIM_FRIGATE_SHIELD`). Elle reste ainsi pendant un certain temps avant de recommencer à tirer.
+
+Pour gérer ces phases, vous aurez besoin d'ajouter des attributs à la structure `Frigate` :
+
+> frigate.h -- Structure Frigate
+>
+> Ajoutez ces membres après `EnemyData m_enemyData;` :
+> ```c
+> float m_accuPhase;        // Timer pour la phase de défense
+> bool m_isShieldActive;     // Indique si le bouclier est actif
+> ```
+
+> frigate.c -- Frigate_create()
+>
+> Initialisez ces nouveaux membres à la fin de la fonction, juste avant les appels aux méthodes VM :
+> ```c
+> self->m_accuPhase = 0.f;
+> self->m_isShieldActive = false;
+> ```
+
+Maintenant, implémentez la logique de phases dans `FrigateVM_onUpdate()`.
+Inspirez-vous du code du `FighterVM_onUpdate()` pour :
+1. Appeler `Enemy_onUpdate()` pour mettre à jour l'animation courante
+2. Écouter l'événement `ANIM_EVENT_ANIMATION_END` sur l'animation de tir pour détecter la fin des 3 cycles
+3. Lorsque l'animation de tir se termine, activer le bouclier et démarrer le timer de phase défensive
+4. Décrémenter le timer de phase à chaque frame (`self->m_accuPhase -= dt;`)
+5. Lorsque le timer atteint zéro, désactiver le bouclier et relancer l'animation de tir
+
+Pour les tirs pendant la phase de tir, utilisez la même logique que le Fighter (détection des bonnes frames pour l'animation de tir).
+
+> [!TIP]
+> **Indice pour le timer de phase** : Une durée de 3 secondes (`3.f`) pour la phase défensive offre un bon équilibre.
+> Vous pouvez définir une constante en haut du fichier : `#define FRIGATE_DEFENSE_PHASE_DURATION 3.f`.
+
+> [!TIP]
+> **Activation du bouclier** : Pour activer le bouclier, vous devez modifier `enemyData->hasShield` à `true` et changer l'animation principale.
+> Pour le désactiver, remettez `hasShield` à `false` et repassez à l'animation de tir.
+> Regardez comment `Enemy_onUpdate()` gère l'affichage du bouclier dans `enemy_data.c` pour comprendre le mécanisme.
+
+#### Étape 5 : Ajout de la Frigate au niveau
+
+Une fois votre Frigate fonctionnelle, ajoutez-la dans une nouvelle vague du niveau 1.
+
+> level_01.c
+>
+> N'oubliez pas d'ajouter l'include en haut du fichier
+>
+> Ajoutez un nouveau case dans le switch de `LevelScene_updateLevel1()` en appelant correctement la création de la Frigate.
+
+---------------------------------------------------
+# Pour aller plus loin
+
+Vous avez maintenant la méthode complète pour créer n'importe quel type d'ennemi !
+Voici quelques idées pour enrichir votre jeu :
+- Créez un ennemi qui se déplace pendant qu'il tire
+- Créez un ennemi "tank" très lent mais avec beaucoup de points de vie
+- Créez un ennemi qui tire des missiles à tête chercheuse (`HomingMissile` est déjà disponible mais nécessite des ajustements)
+- Ajoutez des patterns de tir plus complexes (tir en éventail, tir circulaire...)
+- Créez un boss avec plusieurs phases et des points de vie élevés
+
+Félicitations ! Vous maîtrisez maintenant l'ensemble du basecode de Space Pixels et pouvez créer le jeu de vos rêves. 🚀
+
