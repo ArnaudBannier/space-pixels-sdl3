@@ -67,18 +67,10 @@ target_sources(${NAME} PRIVATE
     "src/game/ui/title_ui_manager.c"
     "src/game/ui/title_ui_manager.h"
 
-    
-    
-    
-    
     "src/game/level/enemy_data.c"
     "src/game/level/enemy_data.h"
     "src/game/level/fighter.c"
     "src/game/level/fighter.h"
-    
-    
-    
-    
     "src/game/level/homing_missile.c"
     "src/game/level/homing_missile.h"
     "src/game/level/item.c"
@@ -87,14 +79,10 @@ target_sources(${NAME} PRIVATE
     "src/game/level/linear_bullet.h"
     "src/game/level/player.c"
     "src/game/level/player.h"
-    
-    
     "src/game/level/template_enemy.c"
     "src/game/level/template_enemy.h"
     "src/game/level/template_object.c"
     "src/game/level/template_object.h"
-    
-    
     "src/game/level/background_layer.c"
     "src/game/level/background_layer.h"
 )
