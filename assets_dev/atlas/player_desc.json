@@ -1,0 +1,38 @@
+{
+  "pixelArt": true,
+  "geometry": {
+    "rowCount": 8,
+    "colCount": 8,
+    "spacing": 0,
+    "width": 48,
+    "height": 48
+  },
+  "groups": [
+    {
+      "name": "ship",
+      "frames": [ 0 ]
+    },
+    {
+      "name": "engine",
+      "frames": [ 1, 2, 3, 4 ]
+    },
+    {
+      "name": "auto-canons",
+      "frames": [ 8, 9, 10, 11, 12, 13, 14 ]
+    },
+    {
+      "name": "big-gun",
+      "frames": [
+        16, 17, 18, 19, 20, 21, 22, 23,
+        24, 25, 26, 27, 28
+      ]
+    },
+    {
+      "name": "rockets",
+      "frames": [
+        32, 33, 34, 35, 36, 37, 38, 39,
+        40, 41, 42, 43, 44, 45, 46, 47
+      ]
+    }
+  ]
+}

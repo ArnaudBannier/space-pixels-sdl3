@@ -1,0 +1,28 @@
+{
+  "pixelArt": true,
+  "geometry": {
+    "rowCount": 4,
+    "colCount": 8,
+    "spacing": 0,
+    "width": 64,
+    "height": 64
+  },
+  "groups": [
+    {
+      "name": "idle",
+      "frames": [ 0 ]
+    },
+    {
+      "name": "firing",
+      "frames": [ 0, 1, 2, 3, 4, 5 ]
+    },
+    {
+      "name": "shield",
+      "frames": [ 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ]
+    },
+    {
+      "name": "dying",
+      "frames": [ 16, 17, 18, 19, 20, 21, 22, 23, 24 ]
+    }
+  ]
+}

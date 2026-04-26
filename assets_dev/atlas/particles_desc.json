@@ -1,0 +1,32 @@
+{
+  "pixelArt": true,
+  "geometry": {
+    "rowCount": 1,
+    "colCount": 5,
+    "spacing": 0,
+    "width": 8,
+    "height": 8
+  },
+  "groups": [
+    {
+      "name": "particle-0",
+      "frames": [ 0 ]
+    },
+    {
+      "name": "particle-1",
+      "frames": [ 1 ]
+    },
+    {
+      "name": "particle-2",
+      "frames": [ 2 ]
+    },
+    {
+      "name": "particle-3",
+      "frames": [ 3 ]
+    },
+    {
+      "name": "particle-4",
+      "frames": [ 4 ]
+    }
+  ]
+}

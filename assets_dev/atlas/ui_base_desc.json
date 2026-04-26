@@ -1,0 +1,20 @@
+{
+    "pixelArt": true,
+    "rectangles": [
+        {"x":  0, "y": 0, "w": 16, "h": 16},
+        {"x": 16, "y": 0, "w": 16, "h": 16},
+        {"x": 32, "y": 0, "w": 16, "h": 16},
+        {"x": 48, "y": 0, "w":  8, "h":  8},
+        {"x": 56, "y": 0, "w":  8, "h":  8},
+        {"x": 64, "y": 0, "w":  8, "h":  8}
+    ],
+    "borders": [
+        {"left": 7, "right": 7, "top": 7, "bottom": 7, "scale": 3, "frames": [0, 1, 2]}
+    ],
+    "groups": [
+        {"name": "border", "frames": [0]},
+        {"name": "button", "frames": [0,1,2]},
+        {"name": "arrows", "frames": [3,4]},
+        {"name": "cursor", "frames": [5]}
+    ]
+}
