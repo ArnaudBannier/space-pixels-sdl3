@@ -83,15 +83,12 @@ void UIObject_init(void* selfPtr, UISystem* uiSystem, const char* objectName);
 
 void UIObject_setParent(void* selfPtr, void* parent);
 void UIObject_setParentId(void* selfPtr, UIObjectId parentId);
-void UIObject_setRect(void* selfPtr, UIRect rect);
-void UIObject_setEnabled(void* selfPtr, bool enabled);
 void UIObject_getViewportRect(void* selfPtr, SDL_FRect* outRect);
 
 void UIObject_update(void* selfPtr);
 void UIObject_render(void* selfPtr, GraphicsSystem* graphicsSystem);
 void UIObject_drawGizmos(void* selfPtr, GizmosSystem* gizmosSystem);
 void UIObject_clearOrphanStatus(void* selfPtr);
-
 
 bool UIObject_isOfType(const void* selfPtr, UIType type);
 
