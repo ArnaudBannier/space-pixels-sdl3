@@ -256,7 +256,7 @@ void UISystem_addObject(UISystem* self, UIObject* object)
 
     SDL_LogInfo(
         SDL_LOG_CATEGORY_SYSTEM,
-        "Added object %s to ui system\n",
+        "Add object %s to ui system\n",
         UIObject_getObjectName(object)
     );
     SDL_LogInfo(
@@ -293,6 +293,16 @@ void UISystem_removeObjectId(UISystem* self, UIObjectId id)
 
     // Increment the generation to invalidate old IDs
     self->m_generations[id.index]++;
+
+    SDL_LogInfo(
+        SDL_LOG_CATEGORY_SYSTEM,
+        "Remove one object from ui system\n"
+    );
+    SDL_LogInfo(
+        SDL_LOG_CATEGORY_SYSTEM,
+        "UISystem size: %d / %d\n",
+        self->m_uiObjectCount, self->m_capacity
+    );
 }
 
 void UISystem_playSFX(UISystem* self, int audioId)
