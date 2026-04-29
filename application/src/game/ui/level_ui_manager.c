@@ -21,6 +21,9 @@ LevelUIManager* LevelUIManager_create(GameContext* context)
     self->m_pausePage = NULL;
     self->m_endPage = NULL;
 
+    // [TODO stats page]
+    //self->m_statsPage = NULL;
+
     return self;
 }
 
@@ -31,6 +34,8 @@ void LevelUIManager_destroy(LevelUIManager* self)
     LevelHUD_destroy(self->m_hud);
     LevelPausePage_destroy(self->m_pausePage);
     LevelEndPage_destroy(self->m_endPage);
+    // [TODO stats page]
+    //LevelStatsPage_destroy(self->m_statsPage);
     free(self);
 }
 
@@ -77,6 +82,21 @@ static void LevelUIManager_applyPageChange(LevelUIManager* self)
         LevelEndPage_destroy(self->m_endPage);
         self->m_endPage = NULL;
     }
+
+    // [TODO stats page]
+    //// Stats page
+    //if (self->m_activePages[LEVEL_UI_PAGE_STATS])
+    //{
+    //    if (!self->m_statsPage)
+    //    {
+    //        self->m_statsPage = LevelStatsPage_create(self->m_context, self);
+    //    }
+    //}
+    //else
+    //{
+    //    LevelStatsPage_destroy(self->m_statsPage);
+    //    self->m_statsPage = NULL;
+    //}
 }
 
 void LevelUIManager_update(LevelUIManager* self)
@@ -97,4 +117,9 @@ void LevelUIManager_update(LevelUIManager* self)
     {
         LevelEndPage_update(self->m_endPage);
     }
+    // [TODO stats page]
+    //if (self->m_statsPage)
+    //{
+    //    LevelStatsPage_update(self->m_statsPage);
+    //}
 }

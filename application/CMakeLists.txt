@@ -56,6 +56,8 @@ target_sources(${NAME} PRIVATE
     "src/game/ui/level_hud.h"
     "src/game/ui/level_pause_page.c"
     "src/game/ui/level_pause_page.h"
+    "src/game/ui/level_stats_page.c"
+    "src/game/ui/level_stats_page.h"
     "src/game/ui/level_ui_manager.c"
     "src/game/ui/level_ui_manager.h"
     "src/game/ui/title_level_menu.c"

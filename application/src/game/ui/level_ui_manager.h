@@ -13,11 +13,16 @@ typedef struct LevelHUD LevelHUD;
 typedef struct LevelPausePage LevelPausePage;
 typedef struct LevelEndPage LevelEndPage;
 
+// [TODO stats page]
+//typedef struct LevelStatsPage LevelStatsPage;
+
 typedef enum LevelUIPageId
 {
     LEVEL_UI_PAGE_HUD = 0,
     LEVEL_UI_PAGE_PAUSE,
     LEVEL_UI_PAGE_END,
+    // [TODO stats page]
+    //LEVEL_UI_PAGE_STATS,
     //
     LEVEL_UI_PAGE_COUNT
 } LevelUIPageId;
@@ -30,6 +35,8 @@ typedef struct LevelUIManager
     LevelHUD* m_hud;
     LevelPausePage* m_pausePage;
     LevelEndPage* m_endPage;
+    // [TODO stats page]
+    //LevelStatsPage* m_statsPage;
 } LevelUIManager;
 
 LevelUIManager* LevelUIManager_create(GameContext* context);
