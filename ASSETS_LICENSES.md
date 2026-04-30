@@ -40,6 +40,16 @@ Links:
 
 ## Fonts
 
+### Noto fonts
+
+Links:
+[Main page](https://github.com/notofonts/latin-greek-cyrillic)
+
+> LICENSE:
+> - SIL Open Font License, 1.1 (https://openfontlicense.org/open-font-license-official-text/)
+> - You can use, modify, and distribute these fonts freely.
+> - Attribution is not required, but would be appreciated.
+
 ### Somepx
 
 Links:
