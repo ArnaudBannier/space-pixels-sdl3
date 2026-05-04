@@ -1,5 +1,7 @@
-Guide d'utilisation des UIObjects du moteur
-===========================================
+Space Pixels : Introduction aux UIObjects
+=========================================
+
+[Retour à l'index](./quick_start_fr.md)
 
 Ce document décrit comment utiliser les UIObjects fournis par le moteur pour construire des interfaces utilisateur complètes.
 L'objectif est pratique : montrer comment composer des pages, organiser les éléments et gérer la navigation entre les éléments interactifs et les différentes pages.
@@ -403,3 +405,7 @@ UIFillRect_setOpacity(background, 0.5f);
 
 L'attribut `orderInLayer` permet d'ordonner les éléments au sein d'une même couche : les valeurs négatives apparaissent en arrière-plan, les valeurs positives au premier plan.
 
+--------------------------------
+- [Retour à l'index](quick_start_fr.md)
+- [Page précédente](quick_start_fr_game.md)
+- [Page suivante](quick_start_fr_ui_2.md)

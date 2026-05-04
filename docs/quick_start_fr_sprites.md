@@ -1,5 +1,7 @@
-Fichiers de description JSON pour les Spritesheets
-==================================================
+Space Pixels : Fichiers de description JSON pour les Spritesheets
+=================================================================
+
+[Retour à l'index](./quick_start_fr.md)
 
 Ce guide présente en détail la structure des fichiers de description JSON utilisés pour charger et découper les spritesheets (atlas de textures).
 Ces fichiers JSON permettent de définir comment une image est découpée en sprites individuels, et comment ces sprites sont organisés en groupes pour créer des animations.
@@ -584,3 +586,8 @@ Pour vérifier que votre fichier JSON est correct :
 - **Parser** : `engine/src/core/sprite_sheet.c`
 - **Structures** : `engine/include/core/sprite_sheet.h`
 - **Exemples** : `assets_dev/atlas/*_desc.json`
+
+--------------------------------
+- [Retour à l'index](quick_start_fr.md)
+- [Page précédente](quick_start_fr_ui_2.md)
+- [Retour au début](quick_start_fr_intro.md)
