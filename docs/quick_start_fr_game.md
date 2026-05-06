@@ -559,22 +559,20 @@ La Frigate alterne entre deux phases :
 - **Phase de TIR** : L'animation `ANIM_FRIGATE_FIRING` se joue 3 fois (rotation du vaisseau), et à chaque frame 1 et 3, la Frigate tire des projectiles (comme le Fighter)
 - **Phase de DÉFENSE** : Après les 3 cycles de tir, la Frigate passe en animation `ANIM_FRIGATE_IDLE` et active son bouclier (`ANIM_FRIGATE_SHIELD`). Elle reste ainsi pendant un certain temps avant de recommencer à tirer.
 
-Pour gérer ces phases, vous aurez besoin d'ajouter des attributs à la structure `Frigate` :
+Pour gérer ces phases, vous aurez besoin d'ajouter un attribut à la structure `Frigate` :
 
 > frigate.h -- Structure Frigate
 >
-> Ajoutez ces membres après `EnemyData m_enemyData;` :
+> Ajoutez ce membre après `EnemyData m_enemyData;` :
 > ```c
-> float m_accuPhase;        // Timer pour la phase de défense
-> bool m_isShieldActive;     // Indique si le bouclier est actif
+> float m_accuPhase; // Timer pour la phase de défense
 > ```
 
 > frigate.c -- Frigate_create()
 >
-> Initialisez ces nouveaux membres à la fin de la fonction, juste avant les appels aux méthodes VM :
+> Initialisez le nouveau membre à la fin de la fonction, juste avant les appels aux méthodes VM :
 > ```c
 > self->m_accuPhase = 0.f;
-> self->m_isShieldActive = false;
 > ```
 
 Maintenant, implémentez la logique de phases dans `FrigateVM_onUpdate()`.
