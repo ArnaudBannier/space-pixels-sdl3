@@ -8,6 +8,8 @@
 #include "game/ui/level_hud.h"
 #include "game/ui/level_pause_page.h"
 #include "game/ui/level_end_page.h"
+// [TODO stats page]
+//#include "game/ui/level_stats_page.h"
 #include "game/core/game_context.h"
 #include "game/game_config.h"
 
