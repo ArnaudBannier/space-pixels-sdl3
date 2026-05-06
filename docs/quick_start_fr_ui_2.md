@@ -111,8 +111,9 @@ La fonction `LevelUIManager_create()` alloue la mémoire et initialise tous les 
 
 > level_ui_manager.c -- LevelUIManager_create()
 >
-> Décommentez la ligne permettant d'inclure le header de la page de stats en haut du fichier.
-> Décommentez la ligne pour initialiser le pointeur à `NULL` dans la fonction `LevelUIManager_create()`.
+> Décommentez les lignes permettant :
+> - d'inclure le header de la page de stats en haut du fichier ;
+> - d'initialiser le pointeur à `NULL` dans la fonction `LevelUIManager_create()`.
 
 > level_ui_manager.c -- LevelUIManager_destroy()
 >
