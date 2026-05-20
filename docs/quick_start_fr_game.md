@@ -418,7 +418,7 @@ Il faut finalement attribuer des points au joueur qui vient de tuer l'ennemi.
 > enemy_data.c -- Enemy_onTakeDamage()
 >
 > Dans le bloc `if (data->hp <= 0.f)`, décommentez la ligne `data->state = ENEMY_STATE_DYING;`.
-> Décommentez également la ligne qui augmente le score du joueur.
+> Décommentez également le bloc qui augmente le score du joueur.
 
 
 ### Étape 4 : Destruction à la fin de l'animation et attribution des points
