@@ -144,8 +144,11 @@ void Enemy_onTakeDamage(void* selfPtr, EnemyData* data, float damage, int player
 
         // [TODO Collisions]
         // - Augmenter le score du joueur qui a tué l'ennemi
-        
-        //g_gameConfig.playerScores[playerId] += (int)data->points;
+
+        //if (playerId >= 0 && playerId < MAX_PLAYER_COUNT)
+        //{
+        //    g_gameConfig.playerScores[playerId] += (int)data->points;
+        //}
 
         if (data->itemType != ITEM_TYPE_NONE)
         {
